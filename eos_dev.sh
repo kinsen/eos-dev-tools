@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cleos="docker exec eos-dev /opt/eosio/bin/cleos"
+
 # Regular Colors
 BLACK='\033[0;30m'        # Black
 RED='\033[0;31m'          # Red
@@ -12,7 +14,6 @@ WHITE='\033[0;37m'        # White
 NC='\033[0m'              # No Color
 
 USAGE="${RED}Usage: eos-dev [start|stop|restart|status]${NC}"
-
 
 function check_container(){
     if [ "$(docker ps -aq -f name=eos-dev)" ]; then
@@ -30,23 +31,23 @@ function start(){
     docker run --name eos-dev --rm -d -p 8888:8888 -p 8900:8900 eosio/eos /bin/bash -c "nodeos -e -p eosio --plugin eosio::wallet_plugin --plugin eosio::chain_api_plugin --plugin eosio::history_api_plugin --replay-blockchain --http-validate-host=0 --http-server-address=0.0.0.0:8888"
 
     echo -e "${GREEN}2.运行钱包服务${NC}"
-    docker container exec -d eos-dev /bin/bash -c "keosd --http-validate-host=0 --http-server-address=0.0.0.0:8900"
+    docker exec -d eos-dev /bin/bash -c "keosd --http-validate-host=0 --http-server-address=0.0.0.0:8900"
     curl http://localhost:8900
 
-    echo -e "${GREEN}3.创建钱包并导入私网eosio秘钥${NC}"
-    docker exec eos-dev /opt/eosio/bin/cleos wallet create
-    cleos wallet import 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
+    echo -e "\n${GREEN}3.创建钱包并导入私网eosio秘钥${NC}"
+    ${cleos} wallet create -n eosio
+    ${cleos} wallet import -n eosio  --private-key 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
 
     echo -e "${GREEN}4.部署基础合约${NC}"
 
     # cleos create key
     # Private key: 5JXMRJ4WLfKiHETVFB4pmxNY26nRjQGbUp7qkXRqZ66Gm8xDgYr
     # Public key: EOS5A7X8xtbAJi3usrzCxSZFr8idhg52fjKHB6ZyRgHP4BrAaoWdt
-    cleos wallet import 5JXMRJ4WLfKiHETVFB4pmxNY26nRjQGbUp7qkXRqZ66Gm8xDgYr
-    cleos create account eosio eosio.token EOS5A7X8xtbAJi3usrzCxSZFr8idhg52fjKHB6ZyRgHP4BrAaoWdt 
-    docker exec eos-dev /opt/eosio/bin/cleos set contract eosio.token /contracts/eosio.token/
-    cleos push action eosio.token create '["eosio","10000000000000.0000 EOS"]' -p eosio.token
-    cleos push action eosio.token issue '["eosio","1000000000000.0000 EOS"]' -p eosio
+    ${cleos} wallet import -n eosio --private-key 5JXMRJ4WLfKiHETVFB4pmxNY26nRjQGbUp7qkXRqZ66Gm8xDgYr
+    ${cleos} create account eosio eosio.token EOS5A7X8xtbAJi3usrzCxSZFr8idhg52fjKHB6ZyRgHP4BrAaoWdt 
+    ${cleos} set contract eosio.token /contracts/eosio.token/
+    ${cleos} push action eosio.token create '["eosio","10000000000000.0000 EOS"]' -p eosio.token
+    ${cleos} push action eosio.token issue '["eosio","1000000000000.0000 EOS"]' -p eosio
 }
 
 function restart(){
