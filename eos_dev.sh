@@ -26,16 +26,29 @@ function check_container(){
 }
 
 function start(){
+    version='latest'
+    if [ $2 ]; then
+        if [[ $2 =~ ^v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+            version=$2
+            echo "launch eos node ${version}"
+        else
+            echo -e "${RED}版本号格式不正确, 例如 v1.0.8${NC}"
+            return
+        fi
+    fi
+
     check_container
     echo -e "${GREEN}1.运行Docker容器,并运行节点${NC}"
+
     # P.S. 参数增加 filter-on 使得可以获取用户的action,否则查询不到action所在的transaction.
     # https://developers.eos.io/eosio-cpp/docs/exchange-deposit-withdraw#section-activate-log-filtering
-    docker run --name eos-dev --rm -d -p 8888:8888 -p 8900:8900 eosio/eos /bin/bash -c "nodeos -e -p eosio \
+    docker run --name eos-dev --rm -d -p 8888:8888 -p 8900:8900 -v ~/:/$USER eosio/eos:${version} /bin/bash -c "nodeos -e -p eosio \
         --contracts-console \
         --filter-on=* \
         --plugin eosio::wallet_plugin \
         --plugin eosio::chain_api_plugin \
         --plugin eosio::history_api_plugin \
+        --max-transaction-time=1000 \
         --replay-blockchain \
         --http-validate-host=0 \
         --http-server-address=0.0.0.0:8888"
@@ -99,7 +112,7 @@ fi
 
 case "$1" in
     "start")
-        start
+        start $@
         ;;
     "stop")
         stop

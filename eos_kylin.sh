@@ -22,12 +22,12 @@ function create_account()
 function get_token()
 {
     check_arguments $@
+    echo "curl http://faucet.cryptokylin.io/get_token?$1"
     curl http://faucet.cryptokylin.io/get_token?$1
 }
 
 function cleos_cmd()
 {
-    echo $@
     check_arguments $@
     cleos -u https://api.kylin-testnet.eospace.io $@
 }
